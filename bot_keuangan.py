@@ -249,10 +249,6 @@ async def main():
     print("BOT ONLINE 24 JAM...")
     await app.run_polling()
 
-# ================= AUTO RESTART =================
+# ================= RUN =================
 if __name__ == "__main__":
-    while True:
-        try:
-            asyncio.run(main())
-        except Exception as e:
-            print("ERROR:", e)
+    asyncio.run(main())
