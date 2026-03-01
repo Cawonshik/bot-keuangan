@@ -10,15 +10,18 @@ from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
 # ================= LOG =================
 logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    format="%(asctime)s - %(levelname)s - %(message)s",
     level=logging.INFO
 )
 
 # ================= CONFIG =================
-TOKEN = os.getenv("BOT_TOKEN")  # ambil dari Railway ENV
+TOKEN = os.getenv("BOT_TOKEN")
+
+print("STARTING BOT...")
+print("TOKEN:", TOKEN)
 
 if not TOKEN:
-    raise ValueError("TOKEN tidak ditemukan! Set BOT_TOKEN di Railway")
+    raise ValueError("BOT_TOKEN tidak ditemukan di ENV!")
 
 # ================= DATABASE =================
 conn = sqlite3.connect("keuangan.db", check_same_thread=False)
@@ -37,6 +40,9 @@ CREATE TABLE IF NOT EXISTS transaksi (
 conn.commit()
 
 # ================= HELPER =================
+def rupiah(n):
+    return f"Rp {n:,.0f}".replace(",", ".")
+
 def tambah_data(user_id, tipe, jumlah, ket):
     tanggal = datetime.now().strftime("%d-%m-%Y")
 
@@ -53,10 +59,6 @@ def ambil_data(user_id):
     FROM transaksi WHERE user_id=?
     """, (user_id,))
     return cursor.fetchall()
-
-# ================= TAMBAHAN PRO =================
-def rupiah(n):
-    return f"Rp {n:,.0f}".replace(",", ".")
 
 # ================= COMMAND =================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -99,7 +101,7 @@ async def keluar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     tambah_data(user_id, "keluar", jumlah, ket)
     await update.message.reply_text(f"💸 Uang keluar {rupiah(jumlah)} berhasil dicatat")
 
-# ================= LAPORAN HARIAN =================
+# ================= LAPORAN =================
 async def laporan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     data = ambil_data(user_id)
@@ -196,25 +198,14 @@ async def download_bulan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     data = ambil_data(user_id)
 
-    if context.args:
-        bulan = bulan_map.get(context.args[0].lower())
-    else:
-        bulan = datetime.now().strftime("%m")
-
+    bulan = bulan_map.get(context.args[0].lower()) if context.args else datetime.now().strftime("%m")
     tahun = datetime.now().strftime("%Y")
 
     filtered = []
-    total_masuk = 0
-    total_keluar = 0
 
     for tipe, jumlah, ket, tanggal in data:
         if bulan in tanggal and tahun in tanggal:
             filtered.append([tipe, jumlah, ket, tanggal])
-
-            if tipe == "masuk":
-                total_masuk += jumlah
-            else:
-                total_keluar += jumlah
 
     if not filtered:
         await update.message.reply_text("Tidak ada data bulan ini")
@@ -228,7 +219,6 @@ async def download_bulan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     with open(filename, "rb") as f:
         await update.message.reply_document(f)
 
-    # hapus file biar storage aman
     try:
         os.remove(filename)
     except:
@@ -243,10 +233,6 @@ async def reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text("Data berhasil dihapus")
 
-# ================= ERROR HANDLER =================
-async def error_handler(update, context):
-    logging.error(msg="Exception while handling update:", exc_info=context.error)
-
 # ================= MAIN =================
 async def main():
     app = ApplicationBuilder().token(TOKEN).build()
@@ -260,8 +246,6 @@ async def main():
     app.add_handler(CommandHandler("downloadbulan", download_bulan))
     app.add_handler(CommandHandler("reset", reset))
 
-    app.add_error_handler(error_handler)
-
     print("BOT ONLINE 24 JAM...")
     await app.run_polling()
 
@@ -272,4 +256,3 @@ if __name__ == "__main__":
             asyncio.run(main())
         except Exception as e:
             print("ERROR:", e)
-            print("Restarting bot...")
