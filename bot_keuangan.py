@@ -2,7 +2,6 @@ import os
 import sqlite3
 from datetime import datetime
 import pandas as pd
-import asyncio
 import logging
 
 from telegram import Update
@@ -234,7 +233,7 @@ async def reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Data berhasil dihapus")
 
 # ================= MAIN =================
-async def main():
+def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
@@ -247,8 +246,10 @@ async def main():
     app.add_handler(CommandHandler("reset", reset))
 
     print("BOT ONLINE 24 JAM...")
-    await app.run_polling()
+
+    # 🔥 FIX EVENT LOOP RAILWAY
+    app.run_polling()
 
 # ================= RUN =================
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
