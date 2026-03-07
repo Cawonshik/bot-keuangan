@@ -57,6 +57,7 @@ def rupiah(n):
     return f"Rp {n:,.0f}".replace(",", ".")
 
 def tambah_data(user_id, tipe, jumlah, ket):
+
     tanggal = datetime.now().strftime("%d-%m-%Y")
 
     cursor.execute("""
@@ -67,14 +68,17 @@ def tambah_data(user_id, tipe, jumlah, ket):
     conn.commit()
 
 def ambil_data(user_id):
+
     cursor.execute("""
     SELECT tipe, jumlah, keterangan, tanggal
     FROM transaksi WHERE user_id=?
     """, (user_id,))
+
     return cursor.fetchall()
 
 # ================= START =================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
     await update.message.reply_text(
         "📊 BOT KEUANGAN AKTIF\n\nGunakan menu di bawah.",
         reply_markup=reply_markup
@@ -264,7 +268,7 @@ async def grafik(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     grafik = df_keluar.groupby("Keterangan")["Jumlah"].sum()
 
-    plt.figure()
+    plt.figure(figsize=(6,6))
 
     grafik.plot(kind="pie", autopct="%1.1f%%")
 
@@ -280,6 +284,31 @@ async def grafik(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_photo(f)
 
     os.remove(file)
+
+# ================= STATISTIK =================
+async def statistik(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    user_id = update.effective_user.id
+    data = ambil_data(user_id)
+
+    if not data:
+        await update.message.reply_text("Belum ada data")
+        return
+
+    total = len(data)
+
+    total_masuk = sum(j for t,j,_,_ in data if t == "masuk")
+    total_keluar = sum(j for t,j,_,_ in data if t == "keluar")
+
+    saldo = total_masuk - total_keluar
+
+    await update.message.reply_text(
+        f"📊 STATISTIK\n\n"
+        f"Total Transaksi: {total}\n"
+        f"Total Masuk: {rupiah(total_masuk)}\n"
+        f"Total Keluar: {rupiah(total_keluar)}\n"
+        f"Saldo: {rupiah(saldo)}"
+    )
 
 # ================= RESET =================
 async def reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
