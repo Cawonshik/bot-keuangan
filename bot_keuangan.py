@@ -321,6 +321,9 @@ async def menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif "grafik" in text:
         await grafik(update, context)
 
+    elif "statistik" in text:
+        await statistik(update, context)
+
     elif "reset" in text:
         await reset(update, context)
 
