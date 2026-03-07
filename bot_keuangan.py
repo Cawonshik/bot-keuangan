@@ -47,7 +47,8 @@ menu_keyboard = [
     ["💰 Uang Masuk", "💸 Uang Keluar"],
     ["📊 Laporan Hari Ini", "📅 Laporan Bulan"],
     ["📆 Laporan Tahun", "📥 Download Excel"],
-    ["📈 Grafik Pengeluaran", "♻️ Reset"]
+    ["📈 Grafik Pengeluaran", "📊 Statistik"],
+    ["♻️ Reset"]
 ]
 
 reply_markup = ReplyKeyboardMarkup(menu_keyboard, resize_keyboard=True)
